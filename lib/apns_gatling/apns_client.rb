@@ -20,7 +20,7 @@ module ApnsGatling
     end
 
     def init_vars
-      @mutex.synchronize do 
+      @mutex.synchronize do
         @socket.close if @socket && !@socket.closed?
         @socket = nil
         @socket_thread = nil
@@ -33,7 +33,7 @@ module ApnsGatling
     def provider_token
       timestamp = Time.new.to_i
       if timestamp - @token_generated_at > 3550
-        @mutex.synchronize do 
+        @mutex.synchronize do
           @token_generated_at = timestamp
           @token = @token_maker.new_token
         end
@@ -65,9 +65,9 @@ module ApnsGatling
       end
 
       stream.on(:close) do
-        @mutex.synchronize do 
-          @token_generated_at = 0 if response.status == '403' && response.error[:reason] == 'ExpiredProviderToken' 
-          if @blocking 
+        @mutex.synchronize do
+          @token_generated_at = 0 if response.status == '403' && response.error[:reason] == 'ExpiredProviderToken'
+          if @blocking
             @blocking = false
             @cv.signal
           end
@@ -88,7 +88,7 @@ module ApnsGatling
       stream.data(request.data)
       @mutex.synchronize { @cv.wait(@mutex, 60) } if @blocking
     end
-    
+
     # connection
     def connection
       @connection ||= HTTP2::Client.new.tap do |conn|
@@ -102,13 +102,13 @@ module ApnsGatling
       end
     end
 
-    # scoket 
+    # scoket
     def ensure_socket_open
-      @mutex.synchronize do 
+      @mutex.synchronize do
         return if @socket_thread
         @socket = new_socket
-        @socket_thread = Thread.new do 
-          begin 
+        @socket_thread = Thread.new do
+          begin
             socket_loop
           rescue EOFError
             init_vars
@@ -117,7 +117,7 @@ module ApnsGatling
             init_vars
             raise e
           end
-        end.tap { |t| t.abort_on_exception = true }
+        end
       end
     end
 
