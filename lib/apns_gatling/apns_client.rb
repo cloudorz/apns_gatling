@@ -53,6 +53,7 @@ module ApnsGatling
 
     # push message
     def push(message)
+      @blocking = true
       request = Request.new(message, provider_token, host)
       response = Response.new
       ensure_socket_open
