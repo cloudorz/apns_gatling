@@ -21,7 +21,7 @@ module ApnsGatling
     end
 
     def init_vars
-      @mutex.synchronize do 
+      @mutex.synchronize do
         @socket.close if @socket && !@socket.closed?
         @socket = nil
         @socket_thread = nil
@@ -34,7 +34,7 @@ module ApnsGatling
     def provider_token
       timestamp = Time.new.to_i
       if timestamp - @token_generated_at > 3550
-        @mutex.synchronize do 
+        @mutex.synchronize do
           @token_generated_at = timestamp
           @token = @token_maker.new_token
         end
@@ -53,8 +53,8 @@ module ApnsGatling
     end
 
     def connection_error(e)
-      @mutex.synchronize do 
-        @requests.values.map do | request | 
+      @mutex.synchronize do
+        @requests.values.map do | request |
           block = request[:block]
           response = request[:response]
           if block && response
@@ -69,9 +69,10 @@ module ApnsGatling
 
     # push message
     def push(message, &block)
+      @blocking = true
       request = Request.new(message, provider_token, host)
       response = Response.new(message)
-      @mutex.synchronize do 
+      @mutex.synchronize do
         @requests[request.id] = {block: block, response: response}
       end
 
@@ -99,10 +100,10 @@ module ApnsGatling
       end
 
       stream.on(:close) do
-        @mutex.synchronize do 
+        @mutex.synchronize do
           @requests.delete request.id
-          @token_generated_at = 0 if response.status == '403' && response.error[:reason] == 'ExpiredProviderToken' 
-          if @blocking 
+          @token_generated_at = 0 if response.status == '403' && response.error[:reason] == 'ExpiredProviderToken'
+          if @blocking
             @blocking = false
             @cv.signal
           end
@@ -123,7 +124,7 @@ module ApnsGatling
       stream.data(request.data)
       @mutex.synchronize { @cv.wait(@mutex, 60) } if @blocking
     end
-    
+
     # connection
     def connection
       @connection ||= HTTP2::Client.new.tap do |conn|
@@ -137,13 +138,13 @@ module ApnsGatling
       end
     end
 
-    # scoket 
+    # scoket
     def ensure_socket_open
-      @mutex.synchronize do 
+      @mutex.synchronize do
         return if @socket_thread
         @socket = new_socket
-        @socket_thread = Thread.new do 
-          begin 
+        @socket_thread = Thread.new do
+          begin
             socket_loop
           rescue EOFError
             init_vars
