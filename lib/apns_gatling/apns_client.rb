@@ -69,6 +69,7 @@ module ApnsGatling
 
     # push message
     def push(message, &block)
+      @blocking = true
       request = Request.new(message, provider_token, host)
       response = Response.new(message)
       @mutex.synchronize do
